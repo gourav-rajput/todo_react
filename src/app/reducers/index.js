@@ -1,7 +1,7 @@
 import { createStore, applyMiddleware, combineReducers } from 'redux';
 import ReduxThunk from 'redux-thunk';
 
-import { ADD_NEW, TOGGLE_COMPLETE, DELETE_TODO } from "../actionTypes";
+import { ADD_NEW, EDIT_TODO, TOGGLE_COMPLETE, DELETE_TODO } from "../actionTypes";
 
 const INITIAL_STATE = {
   list: [
@@ -27,6 +27,14 @@ const ToDoReducer = ( state = INITIAL_STATE, action ) => {
   switch(action.type) {
     case ADD_NEW :
       state.list.push(action.payload.listItem);
+      return { list: [ ...state.list ] }
+    case EDIT_TODO :
+      let listItem = action.payload.listItem;
+      for(let temp of state.list){
+        if (temp.id === listItem.id) {
+          temp.content = listItem.content;
+        }
+      }
       return { list: [ ...state.list ] }
     case TOGGLE_COMPLETE :
       for(let temp of state.list){

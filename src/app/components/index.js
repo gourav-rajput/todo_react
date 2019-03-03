@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
-import { addNew, toggleComplete, deleteTodo } from "../actions";
+import { addNew, editTodo, toggleComplete, deleteTodo } from "../actions";
 import Button from "./button";
 
 
@@ -10,7 +10,9 @@ class ToDo extends Component{
 
     this.state = {
       list: [...props.list],
-      inputValue: ""
+      inputValue: "",
+      openedEditBoxId: "",
+      editValue: ""
     }
   }
 
@@ -31,7 +33,9 @@ class ToDo extends Component{
     return id;
   }
 
-  handleIputChange = event => this.setState({ inputValue : event.target.value });
+  handleNewIputChange = inputValue => this.setState({ inputValue });
+
+  handleEditInputChange = editValue => this.setState({ editValue });
 
   checkForDuplicate = inputValue => this.state.list.some(item => inputValue === item.content);
 
@@ -44,32 +48,59 @@ class ToDo extends Component{
     } else alert("Check the Input Value");  
   }
 
-  renderInput = () => (
-    <div>
-      <input onChange = {event => this.handleIputChange(event)} />
-    </div>
-  )
+  editTodo = listItem => this.setState({ openedEditBoxId: listItem.id, editValue: listItem.content });
 
-  renderAddButton = () => (
-    <div>
-      <Button handleClick = {() => this.handleClickAdd()} value = "Add"/>
-    </div>
+  onEnterChange = id => {
+    let { editValue } = this.state;
+    editValue = editValue.trim();
+    if (editValue !== "" && !this.checkForDuplicate(editValue)) {
+      this.props.editTodo({ content: editValue, id});
+      this.setState({ openedEditBoxId: ""});
+    } else alert("Check the Input Value"); 
+  }
+
+  renderInput = () => <input className="new-task" onChange = {event => this.handleNewIputChange(event.target.value)} type="text" />
+
+  renderAddButton = () => <Button handleClick = {() => this.handleClickAdd()} value = "Add" className="add-btn" />
+
+  renderList = () => (
+    <ul>
+      {
+        this.state.list.map((item, index) => (
+          <li key={item.id}>
+            {
+              item.id === this.state.openedEditBoxId ?
+                <div className="edit-box-container">
+                  <input value={this.state.editValue} type="text" onChange = {event => this.handleEditInputChange(event.target.value)} />
+                  <Button handleClick = {() => this.onEnterChange(item.id)} className="change" value="Change" />
+                </div>
+              :
+                <div>
+                  <input checked = {item.completed} onChange = {() => this.props.toggleComplete(item.id)} type="checkbox" />
+                    <label className={item.completed ? "completed-task" : ""}>
+                      {item.content}
+                    </label>
+                    <Button handleClick = {() => this.editTodo(item)} className="edit" value="Edit" />
+                    <Button handleClick = {() => this.props.deleteTodo(item.id)} className="delete" value="Delete" />
+                </div>
+            }
+          </li>
+        ))
+      }
+    </ul>
   )
 
   render(){
     return(
-      <div>
-        {
-          this.state.list.map((item, index) => (
-            <div key={item.id}>
-              <p>{item.content}</p>
-              <Button handleClick = {() => this.props.toggleComplete(item.id)} value={item.completed ? "Mark Uncomplete" : "Mark Completed"} />
-              <Button handleClick = {() => this.props.deleteTodo(item.id)} value="Delete" />
-            </div>
-          ))
-        }
-        {this.renderInput()}
-        {this.renderAddButton()}
+      <div className="container">
+        <h2>TODO LIST</h2>
+         <h3>Add Item</h3>
+         <p>
+           {this.renderInput()}
+           {this.renderAddButton()}
+         </p>
+         <h3>ToDos</h3>
+          {this.renderList()}
       </div>
      )
   }
@@ -79,6 +110,7 @@ const mapStateToProps = state => ({ list: state.todos.list });
 
 export default connect(mapStateToProps, {
   addNew,
+  editTodo,
   toggleComplete,
   deleteTodo
 })(ToDo);
